@@ -60,10 +60,43 @@ router.post("/cl-login",
   isNotLoggedIn, // Novo
   loginValidation,
   validate,
-  passport.authenticate("local", {
-    failureRedirect: "/auth/cl-login",
-    failureFlash: "Email ou senha inválidos"
-  }),
+  (req, res, next) => {
+    // Verificar se é uma requisição AJAX
+    const isAjax = req.xhr || req.headers['x-requested-with'] === 'XMLHttpRequest';
+    
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        console.error('Erro de autenticação:', err);
+        if (isAjax) {
+          return res.json({ success: false, message: err.message || 'Erro interno do servidor' });
+        }
+        req.flash("error", err.message || 'Erro interno do servidor');
+        return res.redirect("/auth/cl-login");
+      }
+      
+      if (!user) {
+        if (isAjax) {
+          return res.json({ success: false, message: info.message || 'Email ou senha inválidos' });
+        }
+        req.flash("error", info.message || 'Email ou senha inválidos');
+        return res.redirect("/auth/cl-login");
+      }
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Erro no login:', err);
+          if (isAjax) {
+            return res.json({ success: false, message: err.message || 'Erro ao fazer login' });
+          }
+          req.flash("error", err.message || 'Erro ao fazer login');
+          return res.redirect("/auth/cl-login");
+        }
+        
+        // Login bem-sucedido, passar para o próximo middleware
+        return next();
+      });
+    })(req, res, next);
+  },
   authController.login
 );
 
