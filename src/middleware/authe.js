@@ -1,36 +1,47 @@
+// src/middleware/authe.js
 module.exports = {
-  isLoggedIn: (req, res, next) => {
-    if (req.isAuthenticated()) return next();
-    req.flash('error', 'Faça login primeiro');
-    res.redirect('/auth/login');
+  ensureAuthenticated: function(req, res, next) {
+      if (req.isAuthenticated()) {
+          return next();
+      }
+      req.flash('error_msg', 'Por favor, faça login para visualizar este recurso.');
+      res.redirect('/login');
   },
+  ensureNotAuthenticated: function(req, res, next) {
+      if (req.isAuthenticated()) {
+          const userType = req.user ? req.user.tipo : null;
+          let redirectPath = '/'; // Rota padrão se logado e tipo desconhecido
 
-  isNotLoggedIn: (req, res, next) => {
-    if (!req.isAuthenticated()) return next();
-    res.redirect('/');
-  },
-
-  isAuthenticated: (req, res, next) => {
-    if (req.isAuthenticated()) {
+          if (userType === 'aluno') {
+              redirectPath = '/aluno/perfil';
+          } else if (userType === 'professor') {
+              redirectPath = '/professor/perfil';
+          } else if (userType === 'adm') {
+              redirectPath = '/adm/home';
+          }
+          return res.redirect(redirectPath);
+      }
       return next();
-    }
-    req.flash("error", "Você precisa estar logado para acessar esta página");
-    res.redirect("/login");
   },
-
-  isProfessor: (req, res, next) => {
-    if (req.isAuthenticated() && req.user.role === "professor") {
-      return next();
-    }
-    req.flash('error', 'Acesso restrito a professores');
-    res.redirect('/login');
+  isProfessor: function(req, res, next) {
+      if (req.isAuthenticated() && req.user && req.user.tipo === 'professor') {
+          return next();
+      }
+      req.flash('error_msg', 'Acesso negado. Você precisa ser um professor.');
+      res.redirect(req.isAuthenticated() ? '/' : '/login'); // Redireciona para home se logado, senão para login
   },
-
-  isAluno: (req, res, next) => {
-    if (req.isAuthenticated() && req.user.role === "aluno") {
-      return next();
-    }
-    req.flash('error', 'Acesso restrito a alunos');
-    res.redirect('/dashboard');
+  isAluno: function(req, res, next) {
+      if (req.isAuthenticated() && req.user && req.user.tipo === 'aluno') {
+          return next();
+      }
+      req.flash('error_msg', 'Acesso negado. Você precisa ser um aluno.');
+      res.redirect(req.isAuthenticated() ? '/' : '/login');
+  },
+  isAdm: function(req, res, next) {
+      if (req.isAuthenticated() && req.user && req.user.tipo === 'adm') {
+          return next();
+      }
+      req.flash('error_msg', 'Acesso negado. Você precisa ser um administrador.');
+      res.redirect(req.isAuthenticated() ? '/' : '/login');
   }
 };

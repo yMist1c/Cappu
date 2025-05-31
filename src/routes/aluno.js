@@ -1,14 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-// Middleware para verificar se o usuário é aluno
-const isAluno = (req, res, next) => {
-  if (req.user && req.user.role === "aluno") {
-    return next();
-  }
-  res.redirect("/login");
-};
-
+// Middleware centralizado para verificar se o usuário é aluno
+const { isAluno } = require("../middleware/authe");
 router.use(isAluno);
 
 // Dashboard do aluno

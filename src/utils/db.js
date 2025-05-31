@@ -1,14 +1,22 @@
+// src/utils/db.js
+const { Sequelize } = require('sequelize');
 
-const db = require('../config/database');
+// Configurações de conexão com o banco de dados MySQL
+const sequelize = new Sequelize('CAPPUENSINO', 'root', 'PUC#Camp#2024', {
+  host: 'localhost',
+  dialect: 'mysql'
+});
 
-async function query(sql, params) {
-    try {
-        const [rows] = await db.execute(sql, params);
-        return rows;
-    } catch (err) {
-        console.error('Erro ao executar query:', err);
-        throw err;
-    }
+// Testa a conexão
+async function testConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('Conexão com o banco de dados estabelecida com sucesso.');
+  } catch (error) {
+    console.error('Não foi possível conectar ao banco de dados:', error);
+  }
 }
 
-module.exports = { query };
+testConnection();
+
+module.exports = sequelize; // CORRIGIDO: Exporta a instância configurada 'sequelize' (minúsculo)
